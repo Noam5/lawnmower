@@ -1,0 +1,10 @@
+[Login]
+Username: 
+Base64password: 
+
+[ReportDetails]
+CustomerName: 
+ProjectName: 
+TaskName: 
+HalfHour: 
+Description: 

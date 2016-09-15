@@ -1,24 +1,35 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, date
+import os
+import re
+import getpass
+import ConfigParser
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-import re
+from datetime import datetime, date
 
 browser = webdriver.Chrome()
 
 DESHE_CONNECTION_URL = "https://%s:%s@deshe.matrix.co.il/deshe/"
-WORKER_NAME = 
-CUSTOMER_NAME =
-PROJECT_NAME = 
-HALF_AN_HOUR =
-DESCRIPTION = 
-USERNAME = 
-PASSWORD = 
 DATERANGE_REGEX = re.compile("(?P<from>\d{2}:\d{2}) - (?P<to>\d{2}:\d{2})")
 HOUR_FORMAT = '%H:%M'
 
+CONFIG_FILENAME = "config.txt"
+CONFIG_LOGIN_SECTION = "Login"
+CONFIG_USERNAME = "Username"
+CONFIG_PASSWORD = "Password"
+CONFIG_BASE64PASSWORD = "Base64password"
+CONFIG_REPORT_SECTION = "ReportDetails"
+CONFIG_REPORT_CUSTOMER_NAME = "CustomerName"
+CONFIG_REPORT_PROJECT_NAME = "ProjectName"
+CONFIG_REPORT_TASK_NAME = "TaskName"
+CONFIG_REPORT_HALFHOUR = "HalfHour"
+CONFIG_REPORT_DESCRIPTION = "Description"
+
+Config = ConfigParser.ConfigParser()
+
 def choose_customer(customer_name):
+    customer_name = customer_name.decode("cp1255")
     browser.execute_script("document.getElementById(\"ddlCustomers\").parentElement.querySelector('.ui-icon-triangle-1-s').click()")
     browser.execute_script("Array.prototype.slice.call(document.querySelectorAll(\".ui-menu-item\")).filter(function(v) { return v.innerText.indexOf('%s') > -1;})[0].click()" % customer_name)
     #customer = browser.find_element_by_name("ddlCustomers")
@@ -31,6 +42,7 @@ def choose_customer(customer_name):
     #    raise Exception("Customer not found")
 
 def choose_task(task_name):
+    task_name = task_name.decode("cp1255")
     browser.execute_script("document.getElementById(\"ddlTasks\").parentElement.querySelector('.ui-icon-triangle-1-s').click()")
     browser.execute_script("Array.prototype.slice.call(document.querySelectorAll(\".ui-menu-item\")).filter(function(v) { return v.innerText.indexOf('%s') > -1;})[0].click()" % task_name)
     #task = browser.find_element_by_name("ddlTasks")
@@ -44,6 +56,7 @@ def choose_task(task_name):
     #    raise Exception("Task %s not found" % task_name)
         
 def choose_project(project_name):
+    project_name = project_name.decode("cp1255")
     browser.execute_script("document.getElementById(\"ddlProjects\").parentElement.querySelector('.ui-icon-triangle-1-s').click()")
     browser.execute_script("Array.prototype.slice.call(document.querySelectorAll(\".ui-menu-item\")).filter(function(v) { return v.innerText.indexOf('%s') > -1;})[0].click()" % project_name)
     #project = browser.find_element_by_name("ddlProjects")
@@ -58,7 +71,7 @@ def choose_project(project_name):
     
 def fill_description(description):
     description_textarea = browser.find_element_by_name("txtElaboration")
-    description_textarea.send_keys(DESCRIPTION)
+    description_textarea.send_keys(description)
 
 def select_day(day_to_select):
     # Calendar
@@ -104,6 +117,7 @@ def fill_day(day_to_select, from_time, to_time):
     Fills an entire work day.
     If the work day is more than 6 hours, add a 30 minutes break
     """
+    global Config
     browser.switch_to_default_content()
     browser.switch_to.frame(browser.find_elements_by_tag_name("iframe")[3])
     browser.switch_to.frame(browser.find_elements_by_tag_name("frame")[1]) #u'frmHoursReportsDataEntry'
@@ -113,24 +127,30 @@ def fill_day(day_to_select, from_time, to_time):
     from_time_datetime = datetime.strptime(from_time, HOUR_FORMAT)
     to_time_datetime = datetime.strptime(to_time, HOUR_FORMAT)
     tdelta = to_time_datetime - from_time_datetime
+    
+    project_name = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_PROJECT_NAME)
+    task_name = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_TASK_NAME)
+    description = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_DESCRIPTION)
+    half_hour = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_HALFHOUR)
+    
     if tdelta.seconds > 21600: # Bigger than 6 hours
-        choose_project(PROJECT_NAME)
-        choose_task(WORKER_NAME)
-        fill_description(DESCRIPTION)
+        choose_project(project_name)
+        choose_task(task_name)
+        fill_description(description)
         choose_time(from_time, "12:00")
         save()
         
-        choose_task(HALF_AN_HOUR)
-        fill_description(DESCRIPTION)
+        choose_task(half_hour)
+        fill_description(description)
         choose_time("12:00", "12:30")
         save()
         
-        choose_task(WORKER_NAME)
-        fill_description(DESCRIPTION)
+        choose_task(task_name)
+        fill_description(description)
         choose_time("12:30", to_time)
         save()
     else:
-        choose_task(WORKER_NAME)
+        choose_task(task_name)
         choose_time(from_time, to_time)
         save()
 
@@ -167,12 +187,27 @@ def save():
     save.click()
 
 def main():
+    global Config
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    config_path = os.path.join(current_dir, CONFIG_FILENAME)
+    Config.read(config_path)
+    username = Config.get(CONFIG_LOGIN_SECTION, CONFIG_USERNAME)
+    
+    if Config.has_option(CONFIG_LOGIN_SECTION, CONFIG_PASSWORD):
+        password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_PASSWORD)
+    elif Config.has_option(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD): 
+        password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD).decode("base64")
+    else:
+        password = getpass.getpass("Enter password: ")
+    
     MONTH = 9
-    browser.get(DESHE_CONNECTION_URL % (USERNAME, PASSWORD) )
+    browser.get(DESHE_CONNECTION_URL % (username, password) )
     select_month(MONTH)
     browser.switch_to.frame(browser.find_elements_by_tag_name("iframe")[3])
     browser.switch_to.frame(browser.find_elements_by_tag_name("frame")[1]) #u'frmHoursReportsDataEntry'
-    choose_customer(CUSTOMER_NAME)
+
+    customer_name = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_CUSTOMER_NAME)
+    choose_customer(customer_name)
     
     while True:
         result = raw_input("1. fill day, 2. add_break: ")
@@ -183,9 +218,7 @@ def main():
             fill_day(day, from_time, to_time)
         elif result == "2":
             day = raw_input("enter day: ")
-            add_break(int(day), MONTH)    
-        #add_break(31, MONTH)
-        
+            add_break(int(day), MONTH)            
     browser.close()
 
     
