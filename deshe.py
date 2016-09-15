@@ -197,7 +197,7 @@ def main():
         password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_PASSWORD)
     elif Config.has_option(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD): 
         password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD).decode("base64")
-    else:
+    if password is None or password.strip() == '':
         password = getpass.getpass("Enter password: ")
     
     MONTH = 9
