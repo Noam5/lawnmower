@@ -181,7 +181,6 @@ def add_break(day_to_select, selected_month):
             get_hours(monthday_element, day_to_select)
             break
 
-    
 def save():
     save = browser.find_element_by_name("btnSaveNew")
     save.click()
@@ -190,14 +189,15 @@ def main():
     global Config
     current_dir = os.path.dirname(os.path.realpath(__file__))
     config_path = os.path.join(current_dir, CONFIG_FILENAME)
-    Config.read(config_path)
+    Config.readfp(open(config_path))
+
     username = Config.get(CONFIG_LOGIN_SECTION, CONFIG_USERNAME)
     
     if Config.has_option(CONFIG_LOGIN_SECTION, CONFIG_PASSWORD):
         password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_PASSWORD)
     elif Config.has_option(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD): 
         password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD).decode("base64")
-    else:
+    elif password is None or password.strip() == '':
         password = getpass.getpass("Enter password: ")
     
     MONTH = 9
