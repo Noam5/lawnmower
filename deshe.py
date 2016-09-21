@@ -163,7 +163,8 @@ def get_hours(monthday_element, selected_day):
     #from_time_datetime = datetime.strptime(pattern.group("from"), HOUR_FORMAT)
     #to_time_datetime = datetime.strptime(pattern.group("to"), HOUR_FORMAT)
     #TODO: should return the hours and not fill the day
-    fill_day(selected_day, pattern.group("from"), pattern.group("to"))
+    #fill_day(selected_day, pattern.group("from"), pattern.group("to"))
+    return pattern.group("from"), pattern.group("to")
 
 def add_break(day_to_select, selected_month):
     """
@@ -176,10 +177,19 @@ def add_break(day_to_select, selected_month):
     date_to_select = date(date.today().year, selected_month, day_to_select)
     
     # gridNoneWorkingDay
-    for monthday_element in monthdays:
-        if monthday_element.get_attribute("rowdate") == date_to_select.strftime("%Y%m%d"):
-            get_hours(monthday_element, day_to_select)
+    found = False
+    for i in range(2):
+        if found = True:
             break
+            
+        for monthday_element in monthdays:
+            if monthday_element.get_attribute("rowdate") == date_to_select.strftime("%Y%m%d"):
+                from_hour, to_hour = get_hours(monthday_element, day_to_select)
+                fill_day(day_to_select, from_hour, to_hour)
+                found = True
+                break
+
+        browser.refresh() # Nothing was found, refresh
 
 def save():
     save = browser.find_element_by_name("btnSaveNew")
@@ -197,7 +207,7 @@ def main():
         password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_PASSWORD)
     elif Config.has_option(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD): 
         password = Config.get(CONFIG_LOGIN_SECTION, CONFIG_BASE64PASSWORD).decode("base64")
-    elif password is None or password.strip() == '':
+    if password is None or password.strip() == '':
         password = getpass.getpass("Enter password: ")
     
     MONTH = 9
@@ -218,7 +228,7 @@ def main():
             fill_day(day, from_time, to_time)
         elif result == "2":
             day = raw_input("enter day: ")
-            add_break(int(day), MONTH)            
+            add_break(int(day), MONTH)
     browser.close()
 
     
