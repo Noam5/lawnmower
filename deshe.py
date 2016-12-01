@@ -25,6 +25,7 @@ CONFIG_REPORT_PROJECT_NAME = "ProjectName"
 CONFIG_REPORT_TASK_NAME = "TaskName"
 CONFIG_REPORT_HALFHOUR = "HalfHour"
 CONFIG_REPORT_DESCRIPTION = "Description"
+CONFIG_REPORT_HALFHOUR_DESCRIPTION = "HalfHourDescription"
 
 Config = ConfigParser.ConfigParser()
 
@@ -70,6 +71,7 @@ def choose_project(project_name):
     #    raise Exception("Project %s not found" % project_name)
     
 def fill_description(description):
+    description = description.decode("cp1255")
     description_textarea = browser.find_element_by_name("txtElaboration")
     description_textarea.send_keys(description)
 
@@ -131,6 +133,7 @@ def fill_day(day_to_select, from_time, to_time):
     project_name = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_PROJECT_NAME)
     task_name = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_TASK_NAME)
     description = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_DESCRIPTION)
+    halfhour_description = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_HALFHOUR_DESCRIPTION)
     half_hour = Config.get(CONFIG_REPORT_SECTION, CONFIG_REPORT_HALFHOUR)
     
     if tdelta.seconds > 21600: # Bigger than 6 hours
@@ -141,7 +144,7 @@ def fill_day(day_to_select, from_time, to_time):
         save()
         
         choose_task(half_hour)
-        fill_description(description)
+        fill_description(halfhour_description)
         choose_time("12:00", "12:30")
         save()
         
@@ -179,7 +182,7 @@ def add_break(day_to_select, selected_month):
     # gridNoneWorkingDay
     found = False
     for i in range(2):
-        if found = True:
+        if found == True:
             break
             
         for monthday_element in monthdays:
