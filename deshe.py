@@ -213,9 +213,11 @@ def main():
     if password is None or password.strip() == '':
         password = getpass.getpass("Enter password: ")
     
-    MONTH = 9
+    now = datetime.now()
+    month = now.month if now.day > 5 else now.month-1
+    
     browser.get(DESHE_CONNECTION_URL % (username, password) )
-    select_month(MONTH)
+    select_month(month)
     browser.switch_to.frame(browser.find_elements_by_tag_name("iframe")[3])
     browser.switch_to.frame(browser.find_elements_by_tag_name("frame")[1]) #u'frmHoursReportsDataEntry'
 
@@ -231,7 +233,7 @@ def main():
             fill_day(day, from_time, to_time)
         elif result == "2":
             day = raw_input("enter day: ")
-            add_break(int(day), MONTH)
+            add_break(int(day), month)
     browser.close()
 
     
